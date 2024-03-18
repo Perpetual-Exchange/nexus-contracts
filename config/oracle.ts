@@ -95,35 +95,35 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<OracleCo
       tokens: {
         SYS: {
           priceFeed: {
-            address: "0x9128e1f947c4f1Da0f985CAfD4F3AB2B3252c401",
+            address: "0x9Dff2CeBccA79F9090340604b58612fc3e818DCb",
             decimals: 8,
             heartbeatDuration: (24 + 1) * 60 * 60,
           },
         },
         USDT: {
           priceFeed: {
-            address: "0xaDb64aF9a88AeD5589e5285c63172f08E292b8eC",
+            address: "0xf631C28F3cb32301Cd6fe005feccbF24F1bba3c4",
             decimals: 8,
             heartbeatDuration: (24 + 1) * 60 * 60,
           },
         },
         USDC: {
           priceFeed: {
-            address: "0xb52D657Ef7304d6DB176eeE56c68091b021f5682",
+            address: "0x2530CbF4c00BC1839f76f5524DE92825bF045090",
             decimals: 8,
             heartbeatDuration: (24 + 1) * 60 * 60,
           },
         },
         ETH: {
           priceFeed: {
-            address: "0x32336974F8118eb6ADb1f3a919F6515ff0F7C94E",
+            address: "0x8f1ba66d30a1f01bd766eB3Bab0E8AfBeE164252",
             decimals: 8,
             heartbeatDuration: (24 + 1) * 60 * 60,
           },
         },
         BTC: {
           priceFeed: {
-            address: "0xD41121A21b8CbF7DEBA4d87271c9585F15BE4934",
+            address: "0xB921aEe0abD048E2FDd1E15aB2ddFBE589884522",
             decimals: 8,
             heartbeatDuration: (24 + 1) * 60 * 60,
           },

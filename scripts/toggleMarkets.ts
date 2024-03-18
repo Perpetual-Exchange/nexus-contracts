@@ -6,6 +6,7 @@ import * as keys from "../utils/keys";
 
 export async function main() {
   const { read } = hre.deployments;
+  hre.deployments.
 
   const tokens = await hre.gmx.getTokens();
   const markets = await hre.gmx.getMarkets();

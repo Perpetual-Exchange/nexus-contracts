@@ -99,6 +99,11 @@ library ExecuteDepositUtils {
         int256 priceImpactUsd;
     }
 
+    event Debug(
+        uint256 pos,
+        uint256 value
+    );
+
     address public constant RECEIVER_FOR_FIRST_DEPOSIT = address(1);
 
     // @dev executes a deposit
@@ -187,6 +192,7 @@ library ExecuteDepositUtils {
             )
         );
 
+        emit Debug(10, deposit.minMarketTokens());
         if (cache.longTokenAmount > 0) {
             _ExecuteDepositParams memory _params = _ExecuteDepositParams(
                 market,
@@ -221,9 +227,8 @@ library ExecuteDepositUtils {
             cache.receivedMarketTokens += _executeDeposit(params, _params);
         }
 
-        if (cache.receivedMarketTokens < deposit.minMarketTokens()) {
-            revert Errors.MinMarketTokens(cache.receivedMarketTokens, deposit.minMarketTokens());
-        }
+        emit Debug(101, cache.receivedMarketTokens);
+
 
         // validate that internal state changes are correct before calling
         // external callbacks

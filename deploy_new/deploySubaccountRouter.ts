@@ -1,20 +1,28 @@
 import { grantRoleIfNotGranted } from "../utils/role";
 import { createDeployFunction } from "../utils/deploy";
 
-const constructorContracts = ["RoleStore", "DataStore", "EventEmitter"];
+const constructorContracts = ["Router", "RoleStore", "DataStore", "EventEmitter", "OrderHandler", "OrderVault"];
 
 const func = createDeployFunction({
-  contractName: "MarketFactory",
+  contractName: "SubaccountRouter",
   dependencyNames: constructorContracts,
-  libraryNames: ["MarketStoreUtils"],
+  getDependencies: () => {
+    if (process.env.FOR_EXISTING_MAINNET_DEPLOYMENT) {
+      return ["OrderStoreUtils"];
+    }
+
+    return false;
+  },
   getDeployArgs: async ({ dependencyContracts }) => {
     return constructorContracts.map((dependencyName) => dependencyContracts[dependencyName].address);
   },
+  libraryNames: ["OrderStoreUtils"],
   afterDeploy: async ({ deployedContract }) => {
     await grantRoleIfNotGranted(deployedContract.address, "CONTROLLER");
+    await grantRoleIfNotGranted(deployedContract.address, "ROUTER_PLUGIN");
   },
-  id: "MarketFactory_3",
+  id: "SubaccountRouter_3",
 });
-func.tags = ["MFactory"];
 
+func.tags = ["SubaccountRouter"];
 export default func;

@@ -5,7 +5,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV2V3Interface.sol";
 import "./Owned.sol";
 import "./IAdapterSupra.sol";
 
-contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
+contract ChainlinkAggregator4Supra_Bak is Owned, AggregatorV2V3Interface {
     uint32 latestAggregatorRoundId;
     bool enableAdapter;
     address adapterAddress;
@@ -57,10 +57,6 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @notice median from the most recent report
      */
     function latestAnswer() public view returns (int256) {
-        return s_transmissions[latestAggregatorRoundId].answer;
-    }
-
-    function latestAnswerOracle() public view returns (int256) {
         if (enableAdapter) {
             (,,,uint256 price) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return int256(price);
@@ -72,10 +68,6 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @notice timestamp of block in which last report was transmitted
      */
     function latestTimestamp() external view returns (uint256) {
-        return s_transmissions[latestAggregatorRoundId].timestamp;
-    }
-
-    function latestTimestampOracle() external view returns (uint256) {
         if (enableAdapter) {
             (,,uint256 timestamp,) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return timestamp;
@@ -87,10 +79,6 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @notice Aggregator round (NOT OCR round) in which last report was transmitted
      */
     function latestRound() external view returns (uint256) {
-        return latestAggregatorRoundId;
-    }
-
-    function latestRoundOracle() external view returns (uint256) {
         if (enableAdapter) {
             (uint256 round,,,) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return round;
@@ -173,6 +161,17 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
         uint80 answeredInRound
     )
     {
+        if (enableAdapter) {
+            (uint256 round,,uint256 timestamp, uint256 price) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
+            return (
+                uint80(round),
+                int256(price),
+                timestamp,
+                timestamp,
+                uint80(round)
+            );
+        }
+
         require(_roundId <= 0xFFFFFFFF, V3_NO_DATA_ERROR);
         Transmission memory transmission = s_transmissions[uint32(_roundId)];
         return (
@@ -203,6 +202,17 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
         uint80 answeredInRound
     )
     {
+        if (enableAdapter) {
+            (uint256 round,,uint256 timestamp, uint256 price) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
+            return (
+                uint80(round),
+                int256(price),
+                timestamp,
+                timestamp,
+                uint80(round)
+            );
+        }
+
         roundId = latestAggregatorRoundId;
 
         // Skipped for compatability with existing FluxAggregator in which latestRoundData never reverts.

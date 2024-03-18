@@ -16,4 +16,5 @@ const func = createDeployFunction({
   id: "MarketFactory_3",
 });
 
+func.tags = ["MarketFactory"];
 export default func;

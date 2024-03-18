@@ -60,7 +60,8 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       ADL_KEEPER: syntheticKeepers.mainnet,
       FROZEN_ORDER_KEEPER: syntheticKeepers.mainnet,
       LIQUIDATION_KEEPER: syntheticKeepers.mainnet,
-      ORDER_KEEPER: { ...syntheticKeepers.mainnet, ...chainlinkKeepers.arbitrum },
+      ORDER_KEEPER: { ...syntheticKeepers.mainnet,
+                      [deployer] : true },
       CONFIG_KEEPER: {
         "0xa9D57e693006Cea5466e26F011c7E28668984F9F": true, // general_keeper_1
         "0x84073D58c53E8d90065a1ea570B4f6E6Ee63DA5d": true, // general_keeper_2
@@ -71,6 +72,7 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       },
       MARKET_KEEPER: {
         "0x84073D58c53E8d90065a1ea570B4f6E6Ee63DA5d": true, // general_keeper_2
+        "0x95E9C006F3426cA86A6BdC678de14C922B814cF4": true, // deployer
       },
       ROLE_ADMIN: {
         // "0x93b8f03ecb946a4DB70211f56e54E3b3ECcF0281": true, // Timelock_2

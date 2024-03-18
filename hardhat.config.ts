@@ -171,6 +171,7 @@ const config: HardhatUserConfig = {
       url: getRpcUrl("rolluxtest"),
       chainId: 57000,
       accounts: getEnvAccounts(),
+      gasPrice: 1000050,
     },
   },
   // hardhat-deploy has issues with some contracts

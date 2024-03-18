@@ -1,5 +1,6 @@
 import { hashString, hashData } from "./hash";
 
+export const REALTIME_FEED_ID_PREFIX = hashString("NEONNEXUS");
 export const WNT = hashString("WNT");
 export const NONCE = hashString("NONCE");
 
@@ -30,6 +31,7 @@ export const ACCOUNT_ORDER_LIST = hashString("ACCOUNT_ORDER_LIST");
 export const SUBACCOUNT_LIST = hashString("SUBACCOUNT_LIST");
 
 export const CREATE_DEPOSIT_FEATURE_DISABLED = hashString("CREATE_DEPOSIT_FEATURE_DISABLED");
+export const CREATE_WITHDRAWAL_FEATURE_DISABLED = hashString("CREATE_WITHDRAWAL_FEATURE_DISABLED");
 export const CANCEL_DEPOSIT_FEATURE_DISABLED = hashString("CANCEL_DEPOSIT_FEATURE_DISABLED");
 export const EXECUTE_DEPOSIT_FEATURE_DISABLED = hashString("EXECUTE_DEPOSIT_FEATURE_DISABLED");
 
@@ -201,6 +203,10 @@ export function minMarketTokensForFirstDeposit(market) {
 }
 
 export function createDepositFeatureDisabledKey(contract) {
+  return hashData(["bytes32", "address"], [CREATE_DEPOSIT_FEATURE_DISABLED, contract]);
+}
+
+export function createWithdrawalFeatureDisabledKey(contract) {
   return hashData(["bytes32", "address"], [CREATE_DEPOSIT_FEATURE_DISABLED, contract]);
 }
 
@@ -547,4 +553,8 @@ export function subaccountActionCountKey(account: string, subaccount: string, ac
 
 export function subaccountAutoTopUpAmountKey(account: string, subaccount: string) {
   return hashData(["bytes32", "address", "address"], [SUBACCOUNT_AUTO_TOP_UP_AMOUNT, account, subaccount]);
+}
+
+export function realtimeFeedId(token: string) {
+  return hashData(["bytes32", "address"], [REALTIME_FEED_ID_PREFIX, token]);
 }

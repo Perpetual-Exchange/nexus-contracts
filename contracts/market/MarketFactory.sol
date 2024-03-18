@@ -45,7 +45,7 @@ contract MarketFactory is RoleModule {
         bytes32 marketType
     ) external onlyMarketKeeper returns (Market.Props memory) {
         bytes32 salt = keccak256(abi.encode(
-            "GMX_MARKET",
+            "NOX_MARKET",
             indexToken,
             longToken,
             shortToken,
