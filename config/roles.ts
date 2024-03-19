@@ -17,6 +17,9 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       "0xb82E0c6D98e5652Cd1ae8eCA49fA47ee01fC4FAe": true,
       "0x39AD2809F73086A63Ab2F0D8D689D1cc02579abA": true,
     },
+    deposit: {
+      "0xcedC82A956934CeB806d84fBD70a0613916A362e": true,
+    }
   };
 
   const chainlinkKeepers = {
@@ -61,7 +64,9 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       FROZEN_ORDER_KEEPER: syntheticKeepers.mainnet,
       LIQUIDATION_KEEPER: syntheticKeepers.mainnet,
       ORDER_KEEPER: { ...syntheticKeepers.mainnet,
-                      [deployer] : true },
+                      [deployer] : true,
+                      ...syntheticKeepers.deposit,
+                    },
       CONFIG_KEEPER: {
         "0xa9D57e693006Cea5466e26F011c7E28668984F9F": true, // general_keeper_1
         "0x84073D58c53E8d90065a1ea570B4f6E6Ee63DA5d": true, // general_keeper_2

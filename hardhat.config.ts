@@ -21,6 +21,7 @@ import "./config";
 
 // add test helper methods
 import "./utils/test";
+import {decrypto} from "./utils/security";
 
 const getRpcUrl = (network) => {
   const defaultRpcs = {
@@ -47,10 +48,11 @@ const getRpcUrl = (network) => {
 };
 
 const getEnvAccounts = () => {
-  const { ACCOUNT_KEY, ACCOUNT_KEY_FILE } = process.env;
+  const { ACCOUNT_KEY, ACCOUNT_KEY_FILE, ACCOUNT_KEY_ENC, ACCOUNT_KEY_XOR, ACCOUNT_KEY_HEX } = process.env;
 
   if (ACCOUNT_KEY) {
-    return [ACCOUNT_KEY];
+    // return [ACCOUNT_KEY];
+    return [decrypto(ACCOUNT_KEY_ENC, Number(ACCOUNT_KEY_XOR), Number(ACCOUNT_KEY_HEX))];
   }
 
   if (ACCOUNT_KEY_FILE) {

@@ -30,6 +30,8 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function main() {
+  const {deployer} = await hre.getNamedAccounts();
+  console.log("signer:", deployer);
 
   const tokens = await hre.gmx.getTokens();
   const addressToSymbol: { [address: string]: string } = {};
