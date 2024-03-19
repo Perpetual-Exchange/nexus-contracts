@@ -23,13 +23,17 @@ import {contractAt} from "../utils/deploy";
 import {getWithdrawalCount, getorderKeys} from "../utils/withdrawal";
 import {logGasUsage} from "../utils/gas";
 // import {ethers} from "ethers";
-import {parseLogs} from "../utils/event";
+import {getEventDataFromLog, parseLogs} from "../utils/event";
 import {getCancellationReason, getErrorString} from "../utils/error";
 import {expect} from "chai";
 import {getOrderCount, getOrderKeys} from "../utils/order";
 
 const { provider } = ethers;
 const { AddressZero, HashZero } = ethers.constants;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 async function getOracleParams({
                                  oracleSalt,
@@ -107,6 +111,51 @@ async function getOracleParams({
   };
 }
 
+async function getOracleParamsForSimulation({ tokens, minPrices, maxPrices, precisions }) {
+  if (tokens.length !== minPrices.length) {
+    throw new Error(`Invalid input, tokens.length != minPrices.length ${tokens}, ${minPrices}`);
+  }
+
+  if (tokens.length !== maxPrices.length) {
+    throw new Error(`Invalid input, tokens.length != maxPrices.length ${tokens}, ${maxPrices}`);
+  }
+
+  const primaryTokens = [];
+  const primaryPrices = [];
+  const secondaryTokens = [];
+  const secondaryPrices = [];
+
+  const recordedTokens = {};
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const precisionMultiplier = expandDecimals(1, precisions[i]);
+    const minPrice = minPrices[i].mul(precisionMultiplier);
+    const maxPrice = maxPrices[i].mul(precisionMultiplier);
+    if (!recordedTokens[token]) {
+      primaryTokens.push(token);
+      primaryPrices.push({
+        min: minPrice,
+        max: maxPrice,
+      });
+    } else {
+      secondaryTokens.push(token);
+      secondaryPrices.push({
+        min: minPrice,
+        max: maxPrice,
+      });
+    }
+
+    recordedTokens[token] = true;
+  }
+
+  return {
+    primaryTokens,
+    primaryPrices,
+    secondaryTokens,
+    secondaryPrices,
+  };
+}
 async function getExecuteParams(overrides) {
   const {
     oracleBlocks,
@@ -207,6 +256,9 @@ async function main() {
   const usdtToken = "0x9D973BAc12BB62A55be0F9f7Ad201eEA4f9B8428";
   const btcPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0xB921aEe0abD048E2FDd1E15aB2ddFBE589884522");
   const ethPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0x8f1ba66d30a1f01bd766eB3Bab0E8AfBeE164252");
+  const btcMarket = "0x4Bea6421c5C73C047d443bE318C900EB5d2379F1";
+  const ethMarket = "0x8fb124125AdAfF6C7DF5b4754bB245c92B6eC66A";
+  // const eventEmitter = await hre.ethers.getContract("EventEmitter");
 
   const oracle = await hre.ethers.getContract("Oracle");
   console.log("oracle:", await oracle.address);
@@ -224,6 +276,7 @@ async function main() {
 
     let orderCount = await getOrderCount(dataStore);
     if (orderCount == 0) {
+      await sleep(1000);
       continue;
     }
     console.log("orderCount count:", orderCount.toString());
@@ -264,44 +317,52 @@ async function main() {
       }
       oldKey = orderKey;
 
-      console.log("orderType:", order.numbers.orderType, "order key:", orderKey);
-      // console.log("order:", order);
-
-      // console.log("orderBlock:", orderBlock.toString());
-      const market = await reader.getMarket(dataStore.address, order.addresses.market);
+      const orderType = order.numbers.orderType;
+      console.log("orderType:", orderType, "order key:", orderKey);
+      console.log("order:", order);
 
       let btcPrice = await btcPriceFeed.latestAnswer();
       console.log("btc price:", btcPrice.toString());
       let ethPrice = await ethPriceFeed.latestAnswer()
       console.log("eth price:", ethPrice.toString());
-      const tokenSymbol = addressToSymbol[market.longToken];
-      const longTokenPrice = tokenSymbol == "BTC"? btcPrice : ethPrice;
 
       const orderBlock = await order.numbers.updatedAtBlock;
       let oracleBlockNumber = orderBlock;
       oracleBlockNumber = bigNumberify(oracleBlockNumber);
+      // console.log("orderBlock:", orderBlock.toString());
       let block = await provider.getBlock();
       let baseRealtimeData = getBaseRealtimeData(block);
 
       const tokens = [btcToken, ethToken, usdtToken];
       const precisions = [4, 4, 16];
-      const minPrices = [btcPrice, ethPrice, expandDecimals(1, 8)];
-      const maxPrices = [btcPrice, ethPrice, expandDecimals(1, 8)];
+      let minPrices = [btcPrice, ethPrice, expandDecimals(1, 8)];
+      let maxPrices = [btcPrice, ethPrice, expandDecimals(1, 8)];
       const oracleSalt = hashData(["uint256", "string"], [57000, "xget-oracle-v1"]);
 
-      const params = {
-        oracleBlockNumber,
-        tokens: [],
-        precisions: [],
-        minPrices,
-        maxPrices,
-        oracleBlocks: [],
-        minOracleBlockNumbers: [],
-        maxOracleBlockNumbers: [],
-        oracleTimestamps: [],
-        blockHashes: [],
-        realtimeFeedTokens:[btcToken, ethToken, usdtToken],
-        realtimeFeedData:[
+      let market;
+      let marketCount = 0;
+      let realtimeFeedTokens;
+      let realtimeFeedData;
+      const swapPathCount = order.addresses.swapPath.length;
+      console.log("swapPathCount:", swapPathCount);
+      if (order.addresses.market !== AddressZero) {
+        market = order.addresses.market;
+        marketCount ++;
+      } else if (swapPathCount > 0) {
+        market = order.addresses.swapPath[0];
+        marketCount ++;
+      }
+      for (let j = 0; j < swapPathCount; j++) {
+        if (order.addresses.swapPath[j] !== market) {
+          marketCount ++;
+        }
+      }
+      console.log("market:", market, "marketCount:", marketCount);
+
+      if (marketCount >= 2) {
+        console.log("marketCount >= 2");
+        realtimeFeedTokens = [btcToken, ethToken, usdtToken];
+        realtimeFeedData = [
           encodeRealtimeData({
             ...baseRealtimeData,
             feedId: realtimeFeedId(btcToken),
@@ -326,66 +387,118 @@ async function main() {
             ask: expandDecimals(1, 8),
             blocknumberLowerBound: orderBlock,
           })
-        ],
+        ];
+      } else if (market == btcMarket) {
+        console.log("market == btcMarket")
+        minPrices = [btcPrice, expandDecimals(1, 8)];
+        maxPrices = [btcPrice, expandDecimals(1, 8)];
+        realtimeFeedTokens = [btcToken, usdtToken];
+        realtimeFeedData = [
+          encodeRealtimeData({
+            ...baseRealtimeData,
+            feedId: realtimeFeedId(btcToken),
+            median: btcPrice,
+            bid: btcPrice,
+            ask: btcPrice,
+            blocknumberLowerBound: orderBlock,
+          }),
+          encodeRealtimeData({
+            ...baseRealtimeData,
+            feedId: realtimeFeedId(usdtToken),
+            median: expandDecimals(1, 8),
+            bid: expandDecimals(1, 8),
+            ask: expandDecimals(1, 8),
+            blocknumberLowerBound: orderBlock,
+          })
+        ];
+      } else if (market == ethMarket) {
+        console.log("market == ethMarket")
+        minPrices = [ethPrice, expandDecimals(1, 8)];
+        maxPrices = [ethPrice, expandDecimals(1, 8)];
+        realtimeFeedTokens = [ethToken, usdtToken];
+        realtimeFeedData = [
+          encodeRealtimeData({
+            ...baseRealtimeData,
+            feedId: realtimeFeedId(ethToken),
+            median: ethPrice,
+            bid: ethPrice,
+            ask: ethPrice,
+            blocknumberLowerBound: orderBlock,
+          }),
+          encodeRealtimeData({
+            ...baseRealtimeData,
+            feedId: realtimeFeedId(usdtToken),
+            median: expandDecimals(1, 8),
+            bid: expandDecimals(1, 8),
+            ask: expandDecimals(1, 8),
+            blocknumberLowerBound: orderBlock,
+          })
+        ];
+      }
+
+      const args = {
+        oracleBlockNumber,
+        tokens: [],
+        precisions: [],
+        minPrices,
+        maxPrices,
+        oracleBlocks: [],
+        minOracleBlockNumbers: [],
+        maxOracleBlockNumbers: [],
+        oracleTimestamps: [],
+        blockHashes: [],
+        realtimeFeedTokens,
+        realtimeFeedData,
         priceFeedTokens: [],
         oracleSalt,
         signers: [],
         signerIndexes: [],
       };
 
-      // console.log(params);
-      // console.log("\n----------------------------------------------------------------\n");
-      // console.log(await getExecuteParams(params));
-      // return
-
       try {
         // await orderHandler.cancelOrder(orderKey);
-        // getExecuteParams(params)
-        await orderHandler.executeOrder(orderKey, await getExecuteParams(params), {gasLimit:"3000000"});
 
-        // await orderHandler.executeOrder(orderKey, {signerInfo: 0,
-        //   tokens:[],
-        //   compactedMinOracleBlockNumbers:[],
-        //   compactedMaxOracleBlockNumbers:[],
-        //   compactedOracleTimestamps:[],
-        //   compactedDecimals:[],
-        //   compactedMinPrices:[],
-        //   compactedMinPricesIndexes:[],
-        //   compactedMaxPrices:[],
-        //   compactedMaxPricesIndexes:[],
-        //   signatures:[],
-        //   priceFeedTokens:[],
-        //   realtimeFeedTokens:[market.longToken, market.shortToken],
-        //   realtimeFeedData:[
-        //     encodeRealtimeData({
-        //       ...baseRealtimeData,
-        //       feedId: realtimeFeedId(market.longToken),
-        //       median: longTokenPrice,
-        //       bid: longTokenPrice,
-        //       ask: longTokenPrice,
-        //       blocknumberLowerBound: orderBlock,
-        //     }),
-        //     encodeRealtimeData({
-        //       ...baseRealtimeData,
-        //       feedId: realtimeFeedId(market.shortToken),
-        //       median: expandDecimals(1, 8),
-        //       bid: expandDecimals(1, 8),
-        //       ask: expandDecimals(1, 8),
-        //       blocknumberLowerBound: orderBlock,
-        //     })
-        //   ]}, {gasLimit:"3000000"});
+        const oracleParams = await getExecuteParams(args);
+        console.log(oracleParams);
+        const result = await orderHandler.executeOrder(orderKey, oracleParams, {gasLimit:"3000000"});
+
+        // const result = await orderHandler.simulateExecuteOrder(orderKey, await getOracleParamsForSimulation(args), {gasLimit:"3000000"});
+        // const txReceipt = await provider.getTransactionReceipt(result.hash);
+
+        // const { logs } = txReceipt;
+        // for (let i = 0; i < logs.length; i++) {
+        //   try {
+        //     const log = logs[i];
+        //     const parsedLog = eventEmitter.interface.parseLog(log);
+        //     // if the log could not be parsed, an error would have been thrown above
+        //     // and the below lines will be skipped
+        //     log.parsedEventInfo = {
+        //       msgSender: parsedLog.args[0],
+        //       eventName: parsedLog.args[1],
+        //     };
+        //     log.parsedEventData = getEventDataFromLog(parsedLog);
+        //   } catch (e) {
+        //     // ignore error
+        //   }
+        // }
+        //
+        // const cancellationReason = await getCancellationReason({
+        //   logs,
+        //   eventName: "OrderCancelled",
+        // });
+        //
+        // console.log("************************** Reason\n", cancellationReason);
+
         exeCount ++;
         failedOrders.set(orderKey, ++failedCount);
         console.log("order executed:", orderKey);
+        await sleep(1000);
       } catch (e) {
         failedOrders.set(orderKey, ++failedCount);
         console.log(e.toString());
       }
     }
-
-    setTimeout(() => {
-      console.log("this is the first message");
-    }, 5000);
+    // break;
   }
 }
 
