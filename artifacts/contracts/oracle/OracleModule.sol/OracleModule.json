@@ -1,0 +1,24 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "OracleModule",
+  "sourceName": "contracts/oracle/OracleModule.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "OracleError",
+      "type": "event"
+    }
+  ],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea2646970667358221220b3ec7cb155a5ed9ca6a56dc5f053db05520236a9ad92f1cd678b271d05658f2564736f6c63430008120033",
+  "deployedBytecode": "0x6080604052600080fdfea2646970667358221220b3ec7cb155a5ed9ca6a56dc5f053db05520236a9ad92f1cd678b271d05658f2564736f6c63430008120033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

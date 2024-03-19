@@ -70,18 +70,16 @@ async function main() {
     if (depositCount > 0) {
       let depositKeys = await getDepositKeys(dataStore, 0, 1);
       // console.log("111:");
-      const deposit = await reader.getDeposit(dataStore.address, depositKeys[0]);
+      let deposit;
+      try {
+        deposit = await reader.getDeposit(dataStore.address, depositKeys[0]);
+      } catch (e) {
+        continue;
+      }
       if (deposit == undefined || depositKeys[0] == oldKey) {
         continue;
       }
-      // console.log("222:");
       oldKey = depositKeys[0];
-
-      // console.log("333:");
-      let block = await provider.getBlock();
-      // console.log("444:");
-      let baseRealtimeData = getBaseRealtimeData(block);
-      // console.log("555:");
 
       // console.log("deposit.initialLongToken:", addressToSymbol[deposit.addresses.initialLongToken], deposit.addresses.initialLongToken);
       // console.log("deposit.initialShortToken:", addressToSymbol[deposit.addresses.initialShortToken], deposit.addresses.initialShortToken);
@@ -107,18 +105,18 @@ async function main() {
       // await depositHandler.cancelDeposit(depositKeys[0], {gasLimit: "1000000"});
 
       console.log("deposit key:", depositKeys[0]);
-      // console.log("777:");
       const _executeDepositFeatureDisabledKey = keys.executeDepositFeatureDisabledKey(depositHandler.address);
       // await dataStore.setBool(_executeDepositFeatureDisabledKey, false, {gasLimit:"1000000"});
 
-      // console.log("888:");
       let btcPrice = await btcPriceFeed.latestAnswer()
       console.log("btc price:", btcPrice.toString());
       let ethPrice = await ethPriceFeed.latestAnswer()
       console.log("eth price:", ethPrice.toString());
       const tokenSymbol = addressToSymbol[deposit.addresses.initialLongToken];
       const longTokenPrice = tokenSymbol == "BTC"? btcPrice : ethPrice;
-      // console.log("999:");
+      let block = await provider.getBlock();
+      let baseRealtimeData = getBaseRealtimeData(block);
+
       try {
         await depositHandler.executeDeposit(depositKeys[0], {signerInfo: 0,
           tokens:[],compactedMinOracleBlockNumbers:[],compactedMaxOracleBlockNumbers:[],compactedOracleTimestamps:[],compactedDecimals:[],compactedMinPrices:[],compactedMinPricesIndexes:[],compactedMaxPrices: [], compactedMaxPricesIndexes: [], signatures: [], priceFeedTokens: [],

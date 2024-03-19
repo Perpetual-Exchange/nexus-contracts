@@ -141,12 +141,14 @@ async function main() {
     if (withdrawalCount == 0) {
       continue;
     }
-    let block = await provider.getBlock();
-    let baseRealtimeData = getBaseRealtimeData(block);
-
     const withdrawalKeys = await getWithdrawalKeys(dataStore, 0, 1);
     const withdrawalKey = withdrawalKeys[0];
-    const withdrawal = await reader.getWithdrawal(dataStore.address, withdrawalKey);
+    let withdrawal;
+    try {
+      withdrawal = await reader.getWithdrawal(dataStore.address, withdrawalKey);
+    } catch (e) {
+      continue;
+    }
     if (withdrawal == undefined || withdrawalKey == oldKey) {
       continue;
     }
@@ -165,6 +167,8 @@ async function main() {
     console.log("eth price:", ethPrice.toString());
     const tokenSymbol = addressToSymbol[market.longToken];
     const longTokenPrice = tokenSymbol == "BTC"? btcPrice : ethPrice;
+    let block = await provider.getBlock();
+    let baseRealtimeData = getBaseRealtimeData(block);
     // let longTokenMaxPrice;
     // let longTokenMinPrice;
     // if (tokenSymbol == "BTC") {
@@ -176,30 +180,33 @@ async function main() {
     // }
     // console.log("longToken: %s maxPrice: %s minPrice: %s", tokenSymbol, longTokenMaxPrice, longTokenMinPrice);
 
+    const oracleParams = {signerInfo: 0,
+      tokens:[],compactedMinOracleBlockNumbers:[],compactedMaxOracleBlockNumbers:[],compactedOracleTimestamps:[],compactedDecimals:[],compactedMinPrices:[],compactedMinPricesIndexes:[],compactedMaxPrices: [], compactedMaxPricesIndexes: [], signatures: [], priceFeedTokens: [],
+      realtimeFeedTokens:[market.longToken, market.shortToken],
+      realtimeFeedData:[
+        encodeRealtimeData({
+          ...baseRealtimeData,
+          feedId: realtimeFeedId(market.longToken),
+          median: longTokenPrice,
+          bid: longTokenPrice,
+          ask: longTokenPrice,
+          blocknumberLowerBound: withdrawalBlock,
+        }),
+        encodeRealtimeData({
+          ...baseRealtimeData,
+          feedId: realtimeFeedId(market.shortToken),
+          median: expandDecimals(1, 8),
+          bid: expandDecimals(1, 8),
+          ask: expandDecimals(1, 8),
+          blocknumberLowerBound: withdrawalBlock,
+        })
+      ]};
+    console.log(oracleParams);
     try {
-      await withdrawalHandler.executeWithdrawal(withdrawalKey, {signerInfo: 0,
-        tokens:[],compactedMinOracleBlockNumbers:[],compactedMaxOracleBlockNumbers:[],compactedOracleTimestamps:[],compactedDecimals:[],compactedMinPrices:[],compactedMinPricesIndexes:[],compactedMaxPrices: [], compactedMaxPricesIndexes: [], signatures: [], priceFeedTokens: [],
-        realtimeFeedTokens:[market.longToken, market.shortToken],
-        realtimeFeedData:[
-          encodeRealtimeData({
-            ...baseRealtimeData,
-            feedId: realtimeFeedId(market.longToken),
-            median: longTokenPrice,
-            bid: longTokenPrice,
-            ask: longTokenPrice,
-            blocknumberLowerBound: withdrawalBlock,
-          }),
-          encodeRealtimeData({
-            ...baseRealtimeData,
-            feedId: realtimeFeedId(market.shortToken),
-            median: expandDecimals(1, 8),
-            bid: expandDecimals(1, 8),
-            ask: expandDecimals(1, 8),
-            blocknumberLowerBound: withdrawalBlock,
-          })
-        ]}, {gasLimit:"3000000"});
+      await withdrawalHandler.executeWithdrawal(withdrawalKey, oracleParams, {gasLimit:"3000000"});
       exeCount ++;
       console.log("withdrawal executed:", withdrawalKey);
+      break;
     } catch (e) {
     }
 

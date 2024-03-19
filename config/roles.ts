@@ -75,11 +75,11 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
         "0x95E9C006F3426cA86A6BdC678de14C922B814cF4": true, // deployer
       },
       ROLE_ADMIN: {
-        // "0x93b8f03ecb946a4DB70211f56e54E3b3ECcF0281": true, // Timelock_2
+        "0xEd2ee5B11f5d916acf278247DeB109030A7b1aC4": true, // Timelock_2
       },
       ROUTER_PLUGIN: {
-        // "0x1A5a01265b11C6ECCB71761567e29909578CF1a7": true, // ExchangeRouter_2
-        // "0xfF69f7e7Ac7102cf7dE399d4c174fE60E7f9E5a3": true, // SubaccountRouter_1
+        "0x57cFCB96e6653D404E2B7606b3304b1413B93606": true, // ExchangeRouter_2
+        "0xED237f0343706A914d8634aFeb881e061EB002Cf": true, // SubaccountRouter_1
       },
       TIMELOCK_ADMIN: {
         "0x6A6D608a0dE1742Be622Fee4f9189243c0d68153": true, // timelock_admin_1
@@ -91,22 +91,22 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       },
       CONTROLLER: {
         [deployer]: true,
-        // "0xb128655298C9f66131223156ab17FDa14F5D6826": true, // OracleStore_1
-        // "0x90d684f11ec68a139523FDb30D68a8B9C29c4eB3": true, // MarketFactory_1
+        "0xC0aDDfb30E9291e7AE29B10E8Cf8B97d6142d404": true, // OracleStore_1
+        "0x969abf8f44F6049dF4641290eb2CEB6367D17e16": true, // MarketFactory_1
         //
-        // "0x44513E4f5254ba768573DDf22BB757Ef90633e80": true, // Config_2
-        // "0x93b8f03ecb946a4DB70211f56e54E3b3ECcF0281": true, // Timelock_2
-        // "0x4E8d2251BE524F4410A8203533E149467417370f": true, // Oracle_2
-        // "0xD1723D46A5eb1D7d6e08A7eFFe3Ba4489fF83B67": true, // SwapHandler_2
-        // "0x6061DEfb36ca96f1005460488F2F4521997167c7": true, // AdlHandler_2
-        // "0x55714E048fdE38f403792674Db24E8e964F8C5Ee": true, // DepositHandler_2
-        // "0xBB289b2906d63f8d40955B533161aA25dBB24A5E": true, // WithdrawalHandler_2
-        // "0x1BB9Cd0Bf1f07833013e32e3C92A3BA8C10AF235": true, // OrderHandler_2
-        // "0x1A5a01265b11C6ECCB71761567e29909578CF1a7": true, // ExchangeRouter_2
-        // "0xC3978e5e21662Cb3545150bb4002813B21C2e487": true, // FeeHandler_2
-        // "0x9fCE78294523Caa373412E8Fd74AF1319FE61d41": true, // LiquidationHandler_2
+        "0x91EfecE050129c369E7135bf507bC33F28bA98C3": true, // Config_2
+        "0xEd2ee5B11f5d916acf278247DeB109030A7b1aC4": true, // Timelock_2
+        "0x8C965cA42febbB989aE5636f0a16855bbB674d30": true, // Oracle_2
+        "0x3144ECC948f2F1DF802F0cE191aBf329536F51C5": true, // SwapHandler_2
+        "0x017B894694E72eA1d05752e4a6C1B0e7EBd800cA": true, // AdlHandler_2
+        "0xeE849d6E5f4f0742133A6C37e1d4Eb77DFA3b813": true, // DepositHandler_2
+        "0x25a3C9F4Fe362b3A5fcb240bc740466Ab21f7Df5": true, // WithdrawalHandler_2
+        "0x8fa525d1f30B7550B5EC01b6022BBD5aEb3d9A97": true, // OrderHandler_2
+        "0x57cFCB96e6653D404E2B7606b3304b1413B93606": true, // ExchangeRouter_2
+        "0x5Fd764bBa3d715bbdaEfff231b6f5a92dc885819": true, // FeeHandler_2
+        "0xDA7F193ad43B7Fc4F647d7539e37d4F374eE8175": true, // LiquidationHandler_2
         //
-        // "0xfF69f7e7Ac7102cf7dE399d4c174fE60E7f9E5a3": true, // SubaccountRouter_1
+        "0xED237f0343706A914d8634aFeb881e061EB002Cf": true, // SubaccountRouter_1
       },
       GOV_TOKEN_CONTROLLER: {
         // "0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B": true, // RewardRouterV2_1
