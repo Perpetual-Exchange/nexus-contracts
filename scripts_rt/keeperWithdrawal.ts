@@ -217,6 +217,7 @@ async function main() {
       await withdrawalHandler.executeWithdrawal(withdrawalKey, oracleParams, {gasLimit:"3000000"});
       exeCount ++;
       console.log("withdrawal executed:", withdrawalKey);
+      await sleep(1000);
     } catch (e) {
       console.log(e.toString());
     }
