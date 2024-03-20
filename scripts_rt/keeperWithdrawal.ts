@@ -6,7 +6,6 @@ import {createAuthenticationAdapter} from "@rainbow-me/rainbowkit";
 import {encodeRealtimeData, getOracleParams, getOracleParamsForSimulation, TOKEN_ORACLE_TYPES} from "../utils/oracle";
 import {bigNumberify, expandDecimals} from "../utils/math";
 import {realtimeFeedId} from "../utils/keys";
-import {sleep} from "react-query/types/core/utils";
 import {time} from "@nomicfoundation/hardhat-network-helpers";
 import {contractAt} from "../utils/deploy";
 import {getWithdrawalCount, getWithdrawalKeys} from "../utils/withdrawal";
@@ -18,6 +17,9 @@ import {expect} from "chai";
 
 const { provider } = ethers;
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 const getBaseRealtimeData = (block) => {
   return {
     feedId: hashString("feedId"),
