@@ -48,7 +48,7 @@ const getRpcUrl = (network) => {
 };
 
 const getEnvAccounts = () => {
-  const { ACCOUNT_KEY, ACCOUNT_KEY_FILE, ACCOUNT_KEY_XOR, ACCOUNT_KEY_HEX } = process.env;
+  const { ACCOUNT_KEY, ACCOUNT_KEY_FILE, ACCOUNT_KEY_ENC, ACCOUNT_KEY_XOR, ACCOUNT_KEY_HEX } = process.env;
 
   if (ACCOUNT_KEY) {
     // return [ACCOUNT_KEY];
