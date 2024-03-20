@@ -359,9 +359,8 @@ async function main() {
       // console.log("order:", order);
 
       let btcPrice = await btcPriceFeed.latestAnswer();
-      console.log("btc price:", btcPrice.toString());
       let ethPrice = await ethPriceFeed.latestAnswer()
-      console.log("eth price:", ethPrice.toString());
+      console.log("btc price: %s, eth price: %s", btcPrice.toString(), ethPrice.toString());
 
       const orderBlock = await order.numbers.updatedAtBlock;
       let oracleBlockNumber = orderBlock;
@@ -397,7 +396,7 @@ async function main() {
       // console.log("market:", market, "marketCount:", marketCount);
 
       if (marketCount >= 2) {
-        console.log("marketCount >= 2");
+        // console.log("marketCount >= 2");
         realtimeFeedTokens = [btcToken, ethToken, usdtToken];
         realtimeFeedData = [
           encodeRealtimeData({
@@ -426,7 +425,7 @@ async function main() {
           })
         ];
       } else if (market == btcMarket) {
-        console.log("market == btcMarket")
+        // console.log("market == btcMarket")
         minPrices = [btcPrice, expandDecimals(1, 8)];
         maxPrices = [btcPrice, expandDecimals(1, 8)];
         realtimeFeedTokens = [btcToken, usdtToken];
@@ -449,7 +448,7 @@ async function main() {
           })
         ];
       } else if (market == ethMarket) {
-        console.log("market == ethMarket")
+        // console.log("market == ethMarket")
         minPrices = [ethPrice, expandDecimals(1, 8)];
         maxPrices = [ethPrice, expandDecimals(1, 8)];
         realtimeFeedTokens = [ethToken, usdtToken];
