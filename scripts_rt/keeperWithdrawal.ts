@@ -129,14 +129,23 @@ async function main() {
   const btcPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0xB921aEe0abD048E2FDd1E15aB2ddFBE589884522");
   const ethPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0x8f1ba66d30a1f01bd766eB3Bab0E8AfBeE164252");
 
+  const sec = 1000;
+  const min = 60 * sec;
+  const hour = 60 * min;
+  const day = 24 * hour;
+  const step = 1 * min;
+  const start = new Date();
+
   let oldKey;
   let exeCount = 0;
-  let timeCount = 0;
+  let stepCount = 0;
   while(true) {
-    if (timeCount % 60 == 0) {
-      console.log("keeperWithdrawal time escaped: %s mins, executed: %s", timeCount / 60, exeCount);
+    const gap = new Date() - start;
+    const stepNow = parseInt(gap / step);
+    if (stepNow > stepCount) {
+      stepCount = stepNow;
+      console.log("keeperWithdrawal running %s days %s hours %s mins, executed: %s", parseInt(gap/day), parseInt(gap/hour), parseInt(gap/min), exeCount);
     }
-    timeCount ++;
 
     let withdrawalCount = await getWithdrawalCount(dataStore);
     // console.log("withdrawal count:", withdrawalCount.toString());
@@ -203,13 +212,13 @@ async function main() {
           blocknumberLowerBound: withdrawalBlock,
         })
       ]};
-    console.log(oracleParams);
+
     try {
       await withdrawalHandler.executeWithdrawal(withdrawalKey, oracleParams, {gasLimit:"3000000"});
       exeCount ++;
       console.log("withdrawal executed:", withdrawalKey);
-      break;
     } catch (e) {
+      console.log(e.toString());
     }
 
     // // const { reader, dataStore, withdrawalHandler, wnt, usdc } = fixture.contracts;
