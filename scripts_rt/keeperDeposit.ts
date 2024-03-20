@@ -69,7 +69,7 @@ async function main() {
   const min = 60 * sec;
   const hour = 60 * min;
   const day = 24 * hour;
-  const step = 10 * sec;
+  const step = 1 * min;
   const start = new Date();
 
   let oldKey;
