@@ -58,14 +58,30 @@ async function main() {
   const btcPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0xB921aEe0abD048E2FDd1E15aB2ddFBE589884522");
   const ethPriceFeed = await contractAt("ChainlinkAggregator4Supra", "0x8f1ba66d30a1f01bd766eB3Bab0E8AfBeE164252");
 
-  let exeCount = 0;
-  let timeCount = 0;
+
+  // console.log("start:", start);
+  // await sleep(2000);
+  // const end = new Date();
+  // console.log("end:", end);
+  // console.log("start-end:", start-end);
+
+  const sec = 1000;
+  const min = 60 * sec;
+  const hour = 60 * min;
+  const day = 24 * hour;
+  const step = 10 * sec;
+  const start = new Date();
+
   let oldKey;
+  let exeCount = 0;
+  let stepCount = 0;
   while (true) {
-    if (timeCount % 60 == 0) {
-      console.log("keeperDeposit time escaped: %s mins, executed: %s", timeCount / 60, exeCount);
+    const gap = new Date() - start;
+    const stepNow = parseInt(gap / step);
+    if (stepNow > stepCount) {
+      stepCount = stepNow;
+      console.log("keeperDeposit running %s days %s hours %s mins, executed: %s", parseInt(gap/day), parseInt(gap/hour), parseInt(gap/min), exeCount);
     }
-    timeCount ++;
 
     const depositCount = await getDepositCount(dataStore);
     // console.log("depositCount:", depositCount.toString());
