@@ -157,11 +157,13 @@ async function main() {
               blocknumberLowerBound: depositBlock,
             })
           ]}, {gasLimit:"3000000"});
-        console.log("deposit executed:", depositKeys[0]);
         exeCount ++;
+        console.log("deposit executed:", depositKeys[0]);
+        await sleep(1000);
         // await dataStore.setBool(_executeDepositFeatureDisabledKey, true, {gasLimit:"1000000"});
         // break;
       } catch (e) {
+        console.log(e.toString());
       }
     }
 

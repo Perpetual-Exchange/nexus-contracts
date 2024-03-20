@@ -267,21 +267,31 @@ async function main() {
 
   let oldKey;
   let exeCount = 0;
-  let timeCount = 0;
+  let unexeCount = 0;
   const retryCount = 3;
   var failedOrders = new Map();
+
+  const sec = 1000;
+  const min = 60 * sec;
+  const hour = 60 * min;
+  const day = 24 * hour;
+  const step = 1 * min;
+  const start = new Date();
+  let stepCount = 0;
   while(true) {
-    if (timeCount % 60 == 0) {
-      console.log("keeperOrder time escaped: %s mins, executed: %s", timeCount / 60, exeCount);
+    const gap = new Date() - start;
+    const stepNow = parseInt(gap / step);
+    if (stepNow > stepCount) {
+      stepCount = stepNow;
+      console.log("keeperOrder running %s days %s hours %s mins, executed: %s, unexecuted: %s", parseInt(gap/day), parseInt(gap/hour), parseInt(gap/min), exeCount, unexeCount);
     }
-    timeCount ++;
 
     let orderCount = await getOrderCount(dataStore);
     if (orderCount == 0) {
       await sleep(1000);
       continue;
     }
-    console.log("orderCount count:", orderCount.toString());
+    // console.log("orderCount count:", orderCount.toString());
     const orderKeys = await getOrderKeys(dataStore, 0, 100);
     // let order;
     // for (let i = 0; i < orderKeys.length; i++) {
@@ -295,13 +305,15 @@ async function main() {
     //   console.log(order);
     // }
     // return
+    unexeCount = 0;
     for (let i = 0; i < orderKeys.length; i ++) {
       const orderKey = orderKeys[i];
       let failedCount = 0;
       if (failedOrders.has(orderKey)) {
         failedCount = failedOrders.get(orderKey);
         if (failedCount >= retryCount) {
-          console.log("stop order key:", orderKey);
+          // console.log("stop order key:", orderKey);
+          unexeCount ++;
           continue;
         }
       }
@@ -321,7 +333,7 @@ async function main() {
 
       const orderType = order.numbers.orderType;
       console.log("orderType:", orderType, "order key:", orderKey);
-      console.log("order:", order);
+      // console.log("order:", order);
 
       let btcPrice = await btcPriceFeed.latestAnswer();
       console.log("btc price:", btcPrice.toString());
@@ -346,7 +358,7 @@ async function main() {
       let realtimeFeedTokens;
       let realtimeFeedData;
       const swapPathCount = order.addresses.swapPath.length;
-      console.log("swapPathCount:", swapPathCount);
+      // console.log("swapPathCount:", swapPathCount);
       if (order.addresses.market !== AddressZero) {
         market = order.addresses.market;
         marketCount ++;
@@ -359,7 +371,7 @@ async function main() {
           marketCount ++;
         }
       }
-      console.log("market:", market, "marketCount:", marketCount);
+      // console.log("market:", market, "marketCount:", marketCount);
 
       if (marketCount >= 2) {
         console.log("marketCount >= 2");
@@ -461,7 +473,7 @@ async function main() {
         // await orderHandler.cancelOrder(orderKey);
 
         const oracleParams = await getExecuteParams(args);
-        console.log(oracleParams);
+        // console.log(oracleParams);
         const result = await orderHandler.executeOrder(orderKey, oracleParams, {gasLimit:"3000000"});
 
         // const result = await orderHandler.simulateExecuteOrder(orderKey, await getOracleParamsForSimulation(args), {gasLimit:"3000000"});
