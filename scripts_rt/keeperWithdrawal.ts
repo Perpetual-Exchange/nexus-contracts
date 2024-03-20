@@ -108,6 +108,8 @@ async function executeWithOracleParams(overrides) {
   });
 }
 async function main() {
+  const {deployer} = await hre.getNamedAccounts()
+  console.log("signer:", deployer);
 
   const tokens = await hre.gmx.getTokens();
   const addressToSymbol: { [address: string]: string } = {};
