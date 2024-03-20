@@ -238,16 +238,6 @@ async function main() {
   const {deployer} = await hre.getNamedAccounts()
   console.log("signer:", deployer);
 
-  const orderTypeName: { [orderType: number]: string } = {};
-  orderTypeName[0] = "MarketSwap      ";
-  orderTypeName[1] = "LimitSwap       ";
-  orderTypeName[2] = "MarketIncrease  ";
-  orderTypeName[3] = "LimitIncrease   ";
-  orderTypeName[4] = "MarketDecrease  ";
-  orderTypeName[5] = "LimitDecrease   ";
-  orderTypeName[6] = "StopLossDecrease";
-  orderTypeName[7] = "Liquidation     ";
-
   const tokens = await hre.gmx.getTokens();
   const addressToSymbol: { [address: string]: string } = {};
   for (const [tokenSymbol, tokenConfig] of Object.entries(tokens)) {
@@ -275,7 +265,9 @@ async function main() {
   const oracle = await hre.ethers.getContract("Oracle");
   console.log("oracle:", await oracle.address);
 
+  let oldKey;
   let exeCount = 0;
+  let unexeCount = 0;
   const retryCount = 3;
   var failedOrders = new Map();
 
@@ -284,33 +276,14 @@ async function main() {
   const hour = 60 * min;
   const day = 24 * hour;
   const step = 1 * min;
-  const limitStep = 1 * min;
   const start = new Date();
   let stepCount = 0;
-  let limitCount = 0;
   while(true) {
-    let oldKey = "";
-    let unexeCount = 0;
-
-    const dateNow = new Date();
-    let gap = dateNow - start;
+    const gap = new Date() - start;
     const stepNow = parseInt(gap / step);
     if (stepNow > stepCount) {
       stepCount = stepNow;
-      let days = parseInt(gap / day);
-      gap = gap - days * day;
-      let hours = parseInt(gap / hour);
-      gap = gap - hours * hour;
-      let mins = parseInt(gap / min);
-      console.log("keeperOrder running %s days %s hours %s mins, executed: %s, unexecuted: %s", days, hours, mins, exeCount, unexeCount);
-    }
-
-    let limitDisable = true;
-    gap = dateNow - start;
-    const limitNow = parseInt(gap / limitStep);
-    if (limitNow > limitCount) {
-      limitCount = limitNow;
-      limitDisable = false;
+      console.log("keeperOrder running %s days %s hours %s mins, executed: %s, unexecuted: %s", parseInt(gap/day), parseInt(gap/hour), parseInt(gap/min), exeCount, unexeCount);
     }
 
     let orderCount = await getOrderCount(dataStore);
@@ -319,43 +292,47 @@ async function main() {
       continue;
     }
     // console.log("orderCount count:", orderCount.toString());
+    const orderKeys = await getOrderKeys(dataStore, 0, 100);
+    let order;
+    for (let i = 0; i < orderKeys.length; i++) {
+      const orderKey = orderKeys[i];
+      console.log("\n-------------------------------------------------%s\norder key:", i, orderKey);
+      order = await reader.getOrder(dataStore.address, orderKeys[i]);
+      console.log("orderType:", order.numbers.orderType, "market:", order.addresses.market);
+      // if (order.addresses.market === AddressZero) {
+      //   console.log("address zero");
+      // }
+      console.log(order);
+    }
+    return
     unexeCount = 0;
-    const orderKeys = await getOrderKeys(dataStore, 0, orderCount);
     for (let i = 0; i < orderKeys.length; i ++) {
       const orderKey = orderKeys[i];
-
-      let order;
       let failedCount = 0;
-      try {
-        order = await reader.getOrder(dataStore.address, orderKey);
-      } catch (e) {
-        failedCount ++;
-      }
-      if (order == undefined) {
-        failedCount ++;
-      } else if (orderKey == oldKey) {
-        continue;
-      }
-
-      if (failedCount > 0) {
-        if (failedOrders.has(orderKey)) {
-          failedCount += failedOrders.get(orderKey);
-        }
-        failedOrders.set(orderKey, failedCount);
+      if (failedOrders.has(orderKey)) {
+        failedCount = failedOrders.get(orderKey);
         if (failedCount >= retryCount) {
           // console.log("stop order key:", orderKey);
           unexeCount ++;
+          continue;
         }
-        continue;
       }
 
-      oldKey = orderKey;
-      if ((order.numbers.orderType == 1 || order.numbers.orderType == 3 || order.numbers.orderType == 5) && limitDisable) {
+      let order;
+      try {
+        order = await reader.getOrder(dataStore.address, orderKey);
+      } catch (e) {
+        failedOrders.set(orderKey, ++failedCount);
+        continue
+      }
+      if (order == undefined || orderKey == oldKey) {
+        failedOrders.set(orderKey, ++failedCount);
         continue;
       }
+      oldKey = orderKey;
 
       const orderType = order.numbers.orderType;
-      console.log("%s/%s %s", (i+1), orderKeys.length, orderTypeName[orderType], "key:", orderKey);
+      console.log("orderType:", orderType, "order key:", orderKey);
       // console.log("order:", order);
 
       let btcPrice = await btcPriceFeed.latestAnswer();
@@ -497,7 +474,7 @@ async function main() {
 
         const oracleParams = await getExecuteParams(args);
         // console.log(oracleParams);
-        const result = await orderHandler.executeOrder(orderKey, oracleParams, {gasLimit:"20000000"});
+        const result = await orderHandler.executeOrder(orderKey, oracleParams, {gasLimit:"3000000"});
 
         // const result = await orderHandler.simulateExecuteOrder(orderKey, await getOracleParamsForSimulation(args), {gasLimit:"3000000"});
         // const txReceipt = await provider.getTransactionReceipt(result.hash);
@@ -527,15 +504,15 @@ async function main() {
         // console.log("************************** Reason\n", cancellationReason);
 
         exeCount ++;
-        // failedOrders.set(orderKey, ++failedCount);
-        console.log("order executed: %s\n", orderKey);
+        failedOrders.set(orderKey, ++failedCount);
+        console.log("order executed:", orderKey);
+        await sleep(1000);
       } catch (e) {
-        // failedOrders.set(orderKey, ++failedCount);
+        failedOrders.set(orderKey, ++failedCount);
         console.log(e.toString());
       }
     }
     // break;
-    await sleep(1000);
   }
 }
 
