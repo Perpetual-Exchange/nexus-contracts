@@ -19,7 +19,13 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
     },
     deposit: {
       "0xcedC82A956934CeB806d84fBD70a0613916A362e": true,
-    }
+    },
+    withdrawal: {
+      "0xa9D57e693006Cea5466e26F011c7E28668984F9F": true,
+    },
+    order: {
+      "0x84073D58c53E8d90065a1ea570B4f6E6Ee63DA5d": true,
+    },
   };
 
   const chainlinkKeepers = {
@@ -62,10 +68,15 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
     rolluxtest: {   // !!!
       ADL_KEEPER: syntheticKeepers.mainnet,
       FROZEN_ORDER_KEEPER: syntheticKeepers.mainnet,
-      LIQUIDATION_KEEPER: syntheticKeepers.mainnet,
+      LIQUIDATION_KEEPER: {
+                            ...syntheticKeepers.mainnet,
+                            [deployer]: true,
+                          },
       ORDER_KEEPER: { ...syntheticKeepers.mainnet,
                       [deployer] : true,
                       ...syntheticKeepers.deposit,
+                      ...syntheticKeepers.withdrawal,
+                      ...syntheticKeepers.order,
                     },
       CONFIG_KEEPER: {
         "0xa9D57e693006Cea5466e26F011c7E28668984F9F": true, // general_keeper_1
@@ -96,6 +107,9 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       },
       CONTROLLER: {
         [deployer]: true,
+        ...syntheticKeepers.deposit,
+        ...syntheticKeepers.withdrawal,
+        ...syntheticKeepers.order,
         "0xC0aDDfb30E9291e7AE29B10E8Cf8B97d6142d404": true, // OracleStore_1
         "0x969abf8f44F6049dF4641290eb2CEB6367D17e16": true, // MarketFactory_1
         //
