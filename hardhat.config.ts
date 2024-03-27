@@ -31,6 +31,7 @@ const getRpcUrl = (network) => {
     avalancheFuji: "https://api.avax-test.network/ext/bc/C/rpc",
     snowtrace: "https://api.avax.network/ext/bc/C/rpc",
     zktest: "https://testnet-rpc.zkfair.io",
+    zkfair: "https://rpc.zkfair.io",
     rolluxtest: "https://rpc-tanenbaum.rollux.com",
   };
 
@@ -160,6 +161,20 @@ const config: HardhatUserConfig = {
       chainId: 43851,
       accounts: getEnvAccounts(),
       gasPrice: 300000000000,
+      deploy: ["deploy_zktest2/"],
+      verify: {
+        etherscan: {
+          apiUrl: "https://api.arbiscan.io/",
+          apiKey: process.env.ARBISCAN_API_KEY,
+        },
+      },
+      blockGasLimit: 20000000,
+    },
+    zkfair: {
+      url: getRpcUrl("zkfair"),
+      chainId: 42766,
+      accounts: getEnvAccounts(),
+      gasPrice: 5000000000000,
       deploy: ["deploy_zktest2/"],
       verify: {
         etherscan: {

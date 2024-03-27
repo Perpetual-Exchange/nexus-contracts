@@ -26,6 +26,9 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
     order: {
       "0x84073D58c53E8d90065a1ea570B4f6E6Ee63DA5d": true,
     },
+    liquidation: {
+      "0x6A6D608a0dE1742Be622Fee4f9189243c0d68153": true,
+    }
   };
 
   const chainlinkKeepers = {
@@ -71,6 +74,7 @@ export default async function (hre: HardhatRuntimeEnvironment): Promise<RolesCon
       LIQUIDATION_KEEPER: {
                             ...syntheticKeepers.mainnet,
                             [deployer]: true,
+                            ...syntheticKeepers.liquidation,
                           },
       ORDER_KEEPER: { ...syntheticKeepers.mainnet,
                       [deployer] : true,
