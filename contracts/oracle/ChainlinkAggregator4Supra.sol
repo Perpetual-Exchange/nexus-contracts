@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV2V3Interface.sol";
-import "./Owned.sol";
-import "./IAdapterSupra.sol";
+import "../access/Owned.sol";
+import "./interfaces/IAdapterSupra.sol";
 
 contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
+    uint256 public constant maxRoundId = 0xFFFFFFFF;
+
     uint32 latestAggregatorRoundId;
-    bool enableAdapter;
     address adapterAddress;
     uint64 pairIdx;
 
@@ -20,22 +21,23 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
     mapping(uint32 /* aggregator round ID */ => Transmission)
     internal s_transmissions;
 
-    constructor(uint8 _decimals, string memory _description) {
+    mapping (address => bool) public isKeeper;
+
+    constructor(uint8 _decimals, string memory _description, address _adapter, uint64 _pairIdx) {
         decimals = _decimals;
         s_description = _description;
         latestAggregatorRoundId = 0;
+        adapterAddress = _adapter;
+        pairIdx = _pairIdx;
     }
 
-    function setEnableAdapter(bool enabled) public onlyOwner {
-        enableAdapter = enabled;
+    function setKeeper(address _keeper, bool _isKeeper) external onlyOwner {
+        isKeeper[_keeper] = _isKeeper;
     }
 
-    function setAdapterInfo(address adapter, uint64 idx) public onlyOwner {
-        adapterAddress = adapter;
-        pairIdx = idx;
-    }
+    function setLatestAnswer(int192[] memory answers) external {
+        require(isKeeper[msg.sender], "update answer: forbidden");
 
-    function setLatestAnswer(int192[] memory answers) public onlyOwner {
         // s_answer = answer;
         latestAggregatorRoundId++;
         // Check the report contents, and record the result
@@ -56,12 +58,12 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
     /**
      * @notice median from the most recent report
      */
-    function latestAnswer() public view returns (int256) {
+    function latestAnswer() external view returns (int256) {
         return s_transmissions[latestAggregatorRoundId].answer;
     }
 
-    function latestAnswerOracle() public view returns (int256) {
-        if (enableAdapter) {
+    function latestAnswerOracle() external view returns (int256) {
+        if (adapterAddress != address(0)) {
             (,,,uint256 price) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return int256(price);
         }
@@ -76,11 +78,19 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
     }
 
     function latestTimestampOracle() external view returns (uint256) {
-        if (enableAdapter) {
+        if (adapterAddress != address(0)) {
             (,,uint256 timestamp,) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return timestamp;
         }
         return s_transmissions[latestAggregatorRoundId].timestamp;
+    }
+
+    function latestAnswerTimestampOracle() external view returns (int256, uint256) {
+        if (adapterAddress != address(0)) {
+            (,,uint256 timestamp, uint256 price) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
+            return (int256(price), timestamp);
+        }
+        return (s_transmissions[latestAggregatorRoundId].answer, s_transmissions[latestAggregatorRoundId].timestamp);
     }
 
     /**
@@ -91,7 +101,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
     }
 
     function latestRoundOracle() external view returns (uint256) {
-        if (enableAdapter) {
+        if (adapterAddress != address(0)) {
             (uint256 round,,,) = IAdapterSupra(adapterAddress).latestPrices(pairIdx, decimals);
             return round;
         }
@@ -103,7 +113,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @param _roundId the aggregator round of the target report
      */
     function getAnswer(uint256 _roundId) external view returns (int256) {
-        if (_roundId > 0xFFFFFFFF) {
+        if (_roundId > maxRoundId) {
             return 0;
         }
         return s_transmissions[uint32(_roundId)].answer;
@@ -114,7 +124,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @param _roundId aggregator round (NOT OCR round) of target report
      */
     function getTimestamp(uint256 _roundId) external view returns (uint256) {
-        if (_roundId > 0xFFFFFFFF) {
+        if (_roundId > maxRoundId) {
             return 0;
         }
         return s_transmissions[uint32(_roundId)].timestamp;
@@ -142,7 +152,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @notice human-readable description of observable this contract is reporting on
      */
     function description()
-    public
+    external
     view
     virtual
     override
@@ -163,7 +173,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
     function getRoundData(
         uint80 _roundId
     )
-    public
+    external
     view
     returns (
         uint80 roundId,
@@ -173,7 +183,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
         uint80 answeredInRound
     )
     {
-        require(_roundId <= 0xFFFFFFFF, V3_NO_DATA_ERROR);
+        require(_roundId <= maxRoundId, V3_NO_DATA_ERROR);
         Transmission memory transmission = s_transmissions[uint32(_roundId)];
         return (
             _roundId,
@@ -193,7 +203,7 @@ contract ChainlinkAggregator4Supra is Owned, AggregatorV2V3Interface {
      * @return answeredInRound aggregator round of latest report
      */
     function latestRoundData()
-    public
+    external
     view
     returns (
         uint80 roundId,

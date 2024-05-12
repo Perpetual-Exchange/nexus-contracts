@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.20;
 
-import "./ISupraSValueFeed.sol";
-import "./IAdapterSupra.sol";
+import "./interfaces/IAdapterSupra.sol";
+import "./interfaces/ISupraSValueFeed.sol";
 
 contract AdapterSupra is IAdapterSupra {
-    ISupraSValueFeed sValueFeed;
+    ISupraSValueFeed immutable sValueFeed;
 
     constructor(address _contractAddress) {
         sValueFeed = ISupraSValueFeed(_contractAddress);
